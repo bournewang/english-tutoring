@@ -1,5 +1,7 @@
-import bcrypt from 'bcryptjs';
-
+import { getAllCourses, getCoursesByLevelId, getCourseById } from './courses';
+import { getLessonsByCourseId, getLessonById } from './lessons';
+import { loginUser, registerUser, verifyToken } from './auth';
+import { getUserInfo, updateUser } from './user';
 // Utility function to add CORS headers
 function withCORS(response: Response) {
 	const headers = new Headers(response.headers);
@@ -7,26 +9,122 @@ function withCORS(response: Response) {
 	headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
 	headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	return new Response(response.body, {
-		...response,
+		status: response.status,
+		statusText: response.statusText,
 		headers,
 	});
 }
+type Handler = (request: Request, params: Record<string, string>) => Promise<Response>;
 
-// Main handler function
-async function handleRequest(request: Request, env: Env) {
+const routes: Record<string, { [method: string]: Handler }> = {
+	// get all courses
+	'/api/courses': {
+		GET: async (request, env, params) => {
+			const courses = await getAllCourses(env);
+			return new Response(JSON.stringify(courses), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	// get all courses in a level
+	'/api/levels/:levelId/courses': {
+		GET: async (request, env, params) => {
+			console.log('get all courses in a level', params);
+			const courses = await getCoursesByLevelId(Number(params.levelId), env);
+			return new Response(JSON.stringify(courses), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/courses/:courseId': {
+		GET: async (request, env, params) => {
+			console.log('get course by id', params);
+			const course = await getCourseById(Number(params.courseId), env);
+			return new Response(JSON.stringify(course), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/courses/:courseId/lessons': {
+		GET: async (request, env, params) => {
+			const lessons = await getLessonsByCourseId(Number(params.courseId), env);
+			return new Response(JSON.stringify(lessons), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/lessons/:lessonId': {
+		GET: async (request, env, params) => {
+			const lesson = await getLessonById(Number(params.lessonId), env);
+			return new Response(JSON.stringify(lesson), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/login': {
+		POST: async (request, env, params) => {
+			// console.log('login request: ', await request.json());
+			const { user, token } = await loginUser(request, env);
+			return new Response(JSON.stringify({ user, token }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/register': {
+		POST: async (request, env, params) => {
+			const { user, token } = await registerUser(request, env);
+			console.log('user: ', user);
+			console.log('token: ', token);
+			return new Response(JSON.stringify({ user, token }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/user': {
+		GET: async (request, env, params) => {
+			const user = await getUserInfo(params, env);
+			return new Response(JSON.stringify(user), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+		PUT: async (request, env, params) => {
+			const user = await updateUser(request, env);
+			return new Response(JSON.stringify(user), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+};
+
+addEventListener('fetch', (event) => {
+	event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
+	const method = request.method;
 
-	if (url.pathname === '/api/login' && request.method === 'POST') {
-		return loginUser(request, env);
-	} else if (url.pathname === '/api/register' && request.method === 'POST') {
-		return registerUser(request, env);
-	} else if (url.pathname === '/api/user' && request.method === 'GET') {
-		return getUserInfo(request, env);
-	} else if (url.pathname === '/api/user' && request.method === 'PUT') {
-		return updateUser(request, env);
+	try {
+		for (const [pattern, handlers] of Object.entries(routes)) {
+			const match = matchRoute(pattern, url.pathname);
+			if (match && handlers[method]) {
+				return await handlers[method](request, env, match.params);
+			}
+		}
+	} catch (error: any) {
+		console.error('Error in handleRequest:', error);
+		return new Response(JSON.stringify({ message: error.message || 'Internal Server Error' }), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json' },
+		});
 	}
 
 	return new Response('Not Found', { status: 404 });
+}
+
+function matchRoute(pattern: string, pathname: string): { params: Record<string, string> } | null {
+	const patternParts = pattern.split('/');
+	const pathParts = pathname.split('/');
+
+	if (patternParts.length !== pathParts.length) {
+		return null;
+	}
+
+	const params: Record<string, string> = {};
+
+	for (let i = 0; i < patternParts.length; i++) {
+		if (patternParts[i].startsWith(':')) {
+			const paramName = patternParts[i].slice(1);
+			params[paramName] = pathParts[i];
+		} else if (patternParts[i] !== pathParts[i]) {
+			return null;
+		}
+	}
+	console.log('params', params);
+
+	return { params };
 }
 
 // Define the fetch handler object
@@ -44,185 +142,3 @@ const fetchHandler = {
 
 // Export the fetch handler
 export default fetchHandler;
-
-async function registerUser(request: Request, env: Env) {
-	try {
-		const { email, password } = await request.json();
-		const password_hash = await bcrypt.hash(password, 10);
-
-		// Generate a unique token
-		const token = generateToken();
-
-		// Hash the token
-		const hashedToken = await hashToken(token);
-
-		// Insert the new user and hashed token into the database
-		await env.DB.prepare(`
-			INSERT INTO users (email, password_hash, token, created_at)
-			VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-		`).bind(email, password_hash, hashedToken).run();
-
-		// Prepare user information to return
-		const userInfo = {
-			email,
-			// Add other user details if needed
-		};
-
-		// Return the token and user information
-		return new Response(JSON.stringify({
-			message: 'User registered successfully',
-			token,
-			user: userInfo
-		}), { status: 201, headers: { 'Content-Type': 'application/json' } });
-	} catch (error) {
-		return new Response(`Error: ${error.message}`, { status: 500 });
-	}
-}
-
-async function loginUser(request: Request, env: Env) {
-	try {
-		const { email, password } = await request.json();
-		const { results } = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).all();
-
-		if (results.length === 0) {
-			return new Response('User not found', { status: 404 });
-		}
-
-		const user = results[0];
-		const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-
-		if (!isPasswordValid) {
-			return new Response('Invalid credentials', { status: 401 });
-		}
-
-		// Generate a unique token inside the handler
-		const token = generateToken();
-
-		// Hash the token inside the handler
-		const hashedToken = await hashToken(token);
-
-		// Store the hashed token in the database
-		await env.DB.prepare('UPDATE users SET token = ? WHERE email = ?').bind(hashedToken, email).run();
-
-		// Prepare user information to return
-		const userInfo = {
-			email: user.email,
-			name: user.name,
-			gender: user.gender,
-			age: user.age,
-			english_level: user.english_level
-		};
-
-		// Return the original token and user information
-		return new Response(JSON.stringify({ message: 'Login successful', token, user: userInfo }), {
-			status: 200,
-			headers: { 'Content-Type': 'application/json' }
-		});
-	} catch (error) {
-		return new Response(`Error: ${error.message}`, { status: 500 });
-	}
-}
-
-// Function to verify the token and retrieve user information
-async function verifyToken(request: Request, env: Env) {
-	// Extract the token from the Authorization header
-	const authHeader = request.headers.get('Authorization');
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		return { error: 'Unauthorized', status: 401 };
-	}
-
-	const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-	// Hash the provided token
-	const hashedToken = await hashToken(token);
-
-	// Retrieve the user from the database using the hashed token
-	const { results } = await env.DB.prepare('SELECT * FROM users WHERE token = ?').bind(hashedToken).all();
-
-	if (results.length === 0) {
-		return { error: 'User not found', status: 404 };
-	}
-
-	return { user: results[0] };
-}
-
-// Updated getUserInfo function using verifyToken
-async function getUserInfo(request: Request, env: Env) {
-	try {
-		const { user, error, status } = await verifyToken(request, env);
-		if (error) {
-			return new Response(error, { status });
-		}
-
-		// Prepare user information to return
-		const userInfo = {
-			email: user.email,
-			name: user.name,
-			gender: user.gender,
-			age: user.age,
-			english_level: user.english_level
-		};
-
-		// Return the user information
-		return new Response(JSON.stringify({ user: userInfo }), {
-			status: 200,
-			headers: { 'Content-Type': 'application/json' }
-		});
-	} catch (error) {
-		return new Response(`Error: ${error.message}`, { status: 500 });
-	}
-}
-
-// Function to generate a unique token
-function generateToken(length = 32) {
-	const array = new Uint8Array(length);
-	crypto.getRandomValues(array);
-	return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-// Function to hash a token using SHA-256
-async function hashToken(token: string) {
-	const encoder = new TextEncoder();
-	const data = encoder.encode(token);
-	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-}
-
-async function updateUser(request: Request, env: Env) {
-	try {
-		// Verify the token and get the user
-		const { user, error, status } = await verifyToken(request, env);
-		if (error) {
-			return new Response(error, { status });
-		}
-
-		// Parse the request body
-		const updatedData = await request.json();
-
-		// Update the user's information in the database
-		await env.DB.prepare(`
-			UPDATE users
-			SET name = ?, gender = ?, age = ?, english_level = ?
-			WHERE email = ?
-		`).bind(
-			updatedData.name,
-			updatedData.gender,
-			updatedData.age,
-			updatedData.english_level,
-			user.email
-		).run();
-
-		// Fetch the updated user information
-		const { results } = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(user.email).all();
-		const updatedUser = results[0];
-
-		// Return the updated user information
-		return new Response(JSON.stringify({
-			message: 'User updated successfully',
-			user: updatedUser
-		}), { status: 200, headers: { 'Content-Type': 'application/json' } });
-	} catch (error) {
-		return new Response(`Error: ${error.message}`, { status: 500 });
-	}
-}

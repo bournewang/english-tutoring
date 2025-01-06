@@ -6,19 +6,26 @@ import { useUser } from '../context/UserContext';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { setUser, setToken } = useUser();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const data = await login(email, password);
-    if (data.token) {
-      setUser(data.user);
-      setToken(data.token);
-      console.log('Login successful:', data.user);
-      navigate('/tutoring');
+    const response = await login(email, password);
+    // check if request success
+    const data = await response.json();
+    if (response.status === 200) {
+        if (data.user) {
+            setUser(data.user);
+        }
+        if (data.token) {
+            setToken(data.token);
+        }
+        navigate('/tutoring');
     } else {
-      console.error('Login failed:', data.message);
+        console.error('Login failed:', data.message);
+        setError(data.message);
     }
   };
 
@@ -47,6 +54,7 @@ const Login = () => {
           Login
         </button>
       </form>
+      {error && <p className="mt-4 text-center text-red-500">{error}</p>}
       <p className="mt-4 text-center">
         Don't have an account?{' '}
         <Link to="/register" className="text-blue-500 hover:underline">

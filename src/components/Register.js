@@ -1,24 +1,31 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { register } from '../api/auth'; // Assume you have a register function in your API
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { setUser, setToken } = useUser();
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    const data = await register(email, password);
-    if (data.token) {
-      setUser(data.user); // Update the user context with the registered user
-      setToken(data.token); // Update the token in context and local storage
-      console.log('Registration successful:', data.user);
-      navigate('/tutoring'); // Redirect to TutoringPage
+    const response = await register(email, password);
+    console.log(response)
+    const data = await response.json();
+    if (response.status === 201) {
+        if (data.user) {
+            setUser(data.user);
+        }
+        if (data.token) {
+            setToken(data.token);
+        }
+        navigate('/tutoring');
     } else {
-      console.error('Registration failed:', data.message);
+        console.error('Registration failed:', data.message);
+        setError(data.message);
     }
   };
 
@@ -40,6 +47,7 @@ const Register = () => {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded"
         />
+        {error && <div className="text-red-500 mb-4">{error}</div>}
         <button
           type="submit"
           className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"
@@ -47,6 +55,15 @@ const Register = () => {
           Register
         </button>
       </form>
+      
+      <div className="mt-4 text-center">
+        <p className="text-gray-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-500 hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

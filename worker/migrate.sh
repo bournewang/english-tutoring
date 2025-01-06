@@ -30,7 +30,14 @@ db_command="d1 execute $db $suffix"
 reset_database() {
     echo "Resetting database..."
     # Use the db_command variable
-    wrangler d1 execute $db $suffix --command "DROP TABLE IF EXISTS users;"
+    wrangler d1 execute $db $suffix --command "
+    DROP TABLE IF EXISTS users;
+    DROP TABLE IF EXISTS levels;
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS courses;
+    DROP TABLE IF EXISTS lessons;
+    DROP TABLE IF EXISTS slides;
+    "
 }
 
 # Reset the database if the reset flag is true

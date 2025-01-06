@@ -9,8 +9,8 @@ const DashboardLayout = ({ children }) => {
           <h1 className="text-xl font-bold mb-4">Dashboard</h1>
           <ul>
             <li className="mb-2">
-              <Link to="/dashboard" className="block p-2 rounded hover:bg-gray-200">
-                Dashboard
+              <Link to="/tutoring" className="block p-2 rounded hover:bg-gray-200">
+                Tutoring
               </Link>
             </li>
             <li className="mb-2">

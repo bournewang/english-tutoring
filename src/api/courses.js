@@ -1,14 +1,35 @@
 import request from './request';
 
-// Fetch all courses
-export const getCourses = async () => {
+// get all courses
+export const getAllCourses = async () => {
+  const courses = await request('/api/courses', {
+    method: 'GET',
+  });
+  return courses;
+};
+
+// Fetch all courses by level id
+export const getCoursesByLevelId = async (levelId) => {
   try {
-    const courses = await request('/api/courses', {
+    const courses = await request(`/api/levels/${levelId}/courses`, {
       method: 'GET',
     });
     return courses;
   } catch (error) {
     console.error('Error fetching courses:', error);
+    throw error;
+  }
+};
+
+// get course by id
+export const getCourseById = async (courseId) => {
+  try {
+    const course = await request(`/api/courses/${courseId}`, {
+      method: 'GET',
+    });
+    return course;
+  } catch (error) {
+    console.error('Error fetching course:', error);
     throw error;
   }
 };

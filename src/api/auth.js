@@ -8,7 +8,7 @@
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify({ email, password }),
      });
-     return response.json();
+     return response;
    };
 
    export const register = async (email, password) => {
@@ -17,5 +17,5 @@
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify({ email, password }),
      });
-     return response.json();
+     return response;
    };
