@@ -34,3 +34,20 @@ INSERT INTO slides (lesson_id, title, content, sort) VALUES
 (4, 'Basic Geometry Shapes', '<p>Geometry involves the study of shapes and sizes...</p>', 1),
 (5, 'Visa Application Process', '<p>The visa application process varies by country...</p>', 1),
 (6, 'Finding the Best Flight Deals', '<p>To find the best flight deals, consider using comparison websites...</p>', 1);
+
+-- seed the course history table
+INSERT INTO course_history (user_id, course_id, course_name, created_at, completed_at) VALUES
+(1, 1, 'Basic Office Skills', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 2, 'Intermediate Mathematics', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+-- not completed
+(1, 3, 'Advanced Travel Planning', CURRENT_TIMESTAMP, null); 
+
+-- set the completed_at scatter to simulate a user that has completed some lessons at different day
+INSERT INTO lesson_history (user_id, course_id, course_name, lesson_id, lesson_name, created_at, completed_at) VALUES
+(1, 1, 'Basic Office Skills', 1, 'Introduction to Office Tools', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 1, 'Basic Office Skills', 2, 'Email Etiquette', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 1, 'Basic Office Skills', 3, 'Common Office Software', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 2, 'Intermediate Mathematics', 1, 'Algebra Basics', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 2, 'Intermediate Mathematics', 2, 'Geometry Essentials', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 3, 'Advanced Travel Planning', 1, 'Visa Requirements', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(1, 3, 'Advanced Travel Planning', 2, 'Booking Flights', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

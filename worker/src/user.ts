@@ -1,8 +1,8 @@
-import { verifyToken } from './auth';
-// Updated getUserInfo function using verifyToken
+import { authUser } from './auth';
+// Updated getUserInfo function using authUser
 export async function getUserInfo(request: Request, env: Env) {
 
-	const { user, error, status } = await verifyToken(request, env);
+	const { user, error, status } = await authUser(request, env);
 	if (error) {
 		return new Response(error, { status });
 	}
@@ -17,24 +17,21 @@ export async function getUserInfo(request: Request, env: Env) {
 	};
 
 	// Return the user information
-	return new Response(JSON.stringify({ user: userInfo }), {
-		status: 200,
-		headers: { 'Content-Type': 'application/json' }
-	});
+	return userInfo;
 
 }
 
 export async function updateUser(request: Request, env: Env) {
 
 	// Verify the token and get the user
-	const { user, error, status } = await verifyToken(request, env);
+	const { user, error, status } = await authUser(request, env);
 	if (error) {
 		return new Response(error, { status });
 	}
 
 	// Parse the request body
 	const updatedData = await request.json();
-    console.log('updatedData', updatedData);
+	console.log('updatedData', updatedData);
 
 	// Update the user's information in the database
 	await env.DB.prepare(`
@@ -50,13 +47,32 @@ export async function updateUser(request: Request, env: Env) {
 	).run();
 
 	// Fetch the updated user information
-	const { results } = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(user.email).all();
+	const { results } = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(user.id).all();
 	const updatedUser = results[0];
 
 	// Return the updated user information
-	return new Response(JSON.stringify({
-		message: 'User updated successfully',
-		user: updatedUser
-	}), { status: 200, headers: { 'Content-Type': 'application/json' } });
+	return updatedUser;
+
+}
+
+export async function updateCurrentCourse(request: Request, env: Env) {
+	// Verify the token and get the user
+	const { user, error, status } = await authUser(request, env);
+	if (error) {
+		return new Response(error, { status });
+	}
+
+	// Parse the request body
+	const { courseId } = await request.json();
+
+	// Update the user's current course ID in the database
+	await env.DB.prepare(`
+			UPDATE users
+			SET current_course_id = ?, current_lesson_id = null, free_dialog = false 
+			WHERE id = ?
+		`).bind(courseId, user.id).run();
+
+	// Return success response
+	return courseId;
 
 }

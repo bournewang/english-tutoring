@@ -66,14 +66,15 @@ export async function loginUser(request: Request, env: Env) {
 		name: user.name,
 		gender: user.gender,
 		age: user.age,
-		english_level: user.english_level
+		english_level: user.english_level,
+		current_course_id: user.current_course_id,
+		current_lesson_id: user.current_lesson_id,
 	};
 	return { token, user: userInfo };
-
 }
 
 // Function to verify the token and retrieve user information
-export async function verifyToken(request: Request, env: Env) {
+export async function authUser(request: Request, env: Env) {
 	// Extract the token from the Authorization header
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -86,13 +87,13 @@ export async function verifyToken(request: Request, env: Env) {
 	const hashedToken = await hashToken(token);
 
 	// Retrieve the user from the database using the hashed token
-	const { results } = await env.DB.prepare('SELECT * FROM users WHERE token = ?').bind(hashedToken).all();
+	const result = await env.DB.prepare('SELECT * FROM users WHERE token = ?').bind(hashedToken).first();
 
-	if (results.length === 0) {
+	if (!result) {
 		return { error: 'User not found', status: 404 };
 	}
 
-	return { user: results[0] };
+	return { user: result };
 }
 
 

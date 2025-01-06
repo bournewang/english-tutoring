@@ -1,7 +1,9 @@
 import { getAllCourses, getCoursesByLevelId, getCourseById } from './courses';
 import { getLessonsByCourseId, getLessonById } from './lessons';
-import { loginUser, registerUser, verifyToken } from './auth';
-import { getUserInfo, updateUser } from './user';
+import { loginUser, registerUser } from './auth';
+import { getUserInfo, updateUser, updateCurrentCourse } from './user';
+import { getCourseHistory } from './history';
+
 // Utility function to add CORS headers
 function withCORS(response: Response) {
 	const headers = new Headers(response.headers);
@@ -74,6 +76,18 @@ const routes: Record<string, { [method: string]: Handler }> = {
 		PUT: async (request, env, params) => {
 			const user = await updateUser(request, env);
 			return new Response(JSON.stringify(user), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/current-course': {
+		PUT: async (request, env, params) => {
+			const courseId = await updateCurrentCourse(request, env);
+			return new Response(JSON.stringify({ courseId }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+		},
+	},
+	'/api/course-history': {
+		GET: async (request, env, params) => {
+			const courseHistory = await getCourseHistory(request, env);
+			return new Response(JSON.stringify(courseHistory), { status: 200, headers: { 'Content-Type': 'application/json' } });
 		},
 	},
 };

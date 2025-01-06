@@ -24,3 +24,16 @@ export const getUserInfo = async () => {
     throw error;
   }
 };
+
+export const updateCurrentCourse = async (courseId) => {
+  try {
+    const updatedCourse = await request('/api/current-course', {
+      method: 'PUT',
+      body: JSON.stringify({ courseId }),
+    });
+    return updatedCourse;
+  } catch (error) {
+    console.error('Error updating current course:', error);
+    throw error;
+  }
+};

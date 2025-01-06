@@ -1,30 +1,38 @@
-// src/components/TutoringPage.js
-import React, { useState } from 'react';
-import Header from './Header';
-import ChatHistory from './ChatHistory';
-import CourseContent from './CourseContent';
+// src/components/Tutoring.js
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import Header from './Header.js';
+import ChatHistory from './ChatHistory.js';
+import Lesson from './Lesson.js';
 import { connectToWebsocket, disconnectFromWebsocket, handleMicToggle } from '../js/main.js';
+import { useUser } from '../context/UserContext.js';
+import { getLessonById } from '../api/lessons.js';
 
-const TutoringPage = () => {
+const Tutoring = () => {
   const [chatMessages, setChatMessages] = useState([
     { id: 1, sender: 'Tutor', message: 'Hello! How can I help you today?' },
     { id: 2, sender: 'Student', message: 'I want to improve my speaking skills.' },
-    { id: 3, sender: 'Tutor', message: 'Great! Let’s start with some basic exercises.' },
-    { id: 4, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 5, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 6, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 7, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 8, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 9, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 10, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 11, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 12, sender: 'Student', message: 'Sure, I’m ready!' },
-    { id: 13, sender: 'Student', message: 'Sure, I’m ready!' },
   ]);
-
+// 
+  const [searchParams] = useSearchParams();
+  let lessonId = searchParams.get('lessonId');
+  console.log("lesson id from query params: ", lessonId);
+  const {user} = useUser();
   const [newMessage, setNewMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [micOn, setMicOn] = useState(false);
+  const [lesson, setLesson] = useState(null);
+
+  useEffect(() => {
+    console.log("lesson id from query params: ", lessonId);
+    if (!lessonId) {
+        lessonId = user.current_lesson_id;
+        console.log("lesson id from user: ", lessonId);
+    }
+    if (lessonId) {
+        getLessonById(lessonId).then(setLesson);
+    }
+  }, [lessonId]);
 
   const handleSend = () => {
     if (newMessage.trim() !== '') {
@@ -55,7 +63,7 @@ const TutoringPage = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="h-12">
+      <div className="">
         <Header />
       </div>
       <div className="flex-grow flex p-4 bg-gray-100 overflow-y-auto">
@@ -74,8 +82,17 @@ const TutoringPage = () => {
               </button>
             </div>
           </div>
-          <div className="flex-grow mb-4 overflow-y-auto">
-            <CourseContent />
+          
+          <div className="flex-grow mb-4 overflow-y-auto border-t border-gray-300 rounded-lg p-4">
+            {lesson ? <Lesson lesson={lesson} /> : 
+            <div className='flex justify-center items-center h-full'>
+              {/* <h1 className='text-2xl font-bold'>Free Talk</h1> */}
+            <div className="flex flex-col space-y-4">
+              <p className="">Free talk, or choose a <Link className='text-blue-500' to="/courses">Courses</Link></p>
+              
+            </div>
+            </div>
+            }
           </div>
         </div>
         <div className="w-1/3 h-full ml-4 flex flex-col">
@@ -103,4 +120,4 @@ const TutoringPage = () => {
   );
 };
 
-export default TutoringPage;
+export default Tutoring;
