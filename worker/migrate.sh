@@ -23,7 +23,7 @@ for arg in "$@"; do
 done
 
 # Define the base command parameters for database operations
-db="english-tutoring"
+db="english-tutoring-p1"
 db_command="d1 execute $db $suffix"
 
 # Function to reset the database

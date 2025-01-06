@@ -8,5 +8,5 @@ workers_dev = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "english-tutoring"
-database_id = "cd16cad7-bdab-4945-94d0-314ba734e0bc"
+database_name = "english-tutoring-p1"
+database_id = "a30faccc-6ee4-4922-a06d-57358d9a1d76"
