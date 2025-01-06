@@ -1,0 +1,12 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "english-tutoring-api"
+type = "javascript"
+compatibility_date = "2023-10-05"
+
+account_id = "89c48b3cdc75b8848ea717109decd49f"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "english-tutoring"
+database_id = "cd16cad7-bdab-4945-94d0-314ba734e0bc"

@@ -1,19 +1,31 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TutoringPage from './components/TutoringPage';
-// Import other components like Register, Login, Dashboard
+import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
+import Courses from './components/Courses';
+import Billing from './components/Billing';
+import Login from './components/Login';
+import Register from './components/Register';
+import ProtectedRoute from './components/ProtectedRoute';
+import RedirectToTutoring from './components/RedirectToTutoring';
 
-function App() {
+const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/tutoring" />} />
-        <Route path="/tutoring" element={<TutoringPage />} />
-        {/* Define other routes for Register, Login, Dashboard */}
+        <Route path="/" element={<RedirectToTutoring />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/tutoring" element={<ProtectedRoute><TutoringPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
